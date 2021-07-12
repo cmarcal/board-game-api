@@ -1,4 +1,9 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { IUser } from './interfaces/user.interface';
@@ -13,7 +18,7 @@ const userProjection = {
 export class UserService {
   constructor(@InjectModel('User') private readonly userModel: Model<IUser>) {}
 
-  public async getUsers(): Promise<UserDto[]> {
+  async getUsers(): Promise<UserDto[]> {
     const users = await this.userModel.find({}, userProjection).exec();
 
     if (!users || !users[0])
@@ -22,12 +27,12 @@ export class UserService {
     return users;
   }
 
-  public async createUser(newUser: UserDto) {
+  async createUser(newUser: UserDto) {
     const user = new this.userModel(newUser);
     return user.save();
   }
 
-  public async getUserById(id: number): Promise<UserDto> {
+  async getUserById(id: number): Promise<UserDto> {
     const user = await this.userModel.findOne({ id }, userProjection).exec();
 
     if (!user) throw new HttpException('Not found', HttpStatus.NOT_FOUND);
@@ -35,7 +40,15 @@ export class UserService {
     return user;
   }
 
-  public async deleteUserById(id: number): Promise<any> {
+  async getUserByEmail(email: string): Promise<UserDto> {
+    const user = await this.userModel.findOne({ email }, userProjection).exec();
+
+    if (!user) throw new NotFoundException('User not found');
+
+    return user;
+  }
+
+  async deleteUserById(id: number): Promise<any> {
     const user = await this.userModel.deleteOne({ id }).exec();
 
     if (user.deletedCount === 0)
@@ -44,7 +57,7 @@ export class UserService {
     return user;
   }
 
-  public async updateUser(id: number, newUser: UserDto): Promise<UserDto> {
+  async updateUser(id: number, newUser: UserDto): Promise<UserDto> {
     const user = await this.userModel
       .findOneAndUpdate({ id }, { ...newUser })
       .exec();
