@@ -7,3 +7,8 @@ export interface IUser extends Document {
   readonly email: string;
   readonly password: string;
 }
+
+export interface IChangePassword extends Document {
+  readonly email: string;
+  readonly password: string;
+}

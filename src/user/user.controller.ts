@@ -12,6 +12,7 @@ import {
 import { UserService } from './user.service';
 import { UserDto } from './user.dto';
 import { JwtAuthGuard } from 'src/auth/shared/jwt-auth.guard';
+import { IChangePassword } from './interfaces/user.interface';
 @Controller()
 export class UserController {
   constructor(private userService: UserService) {}
@@ -25,6 +26,11 @@ export class UserController {
   @Post('user')
   public async createUser(@Body() user: UserDto) {
     return this.userService.createUser(user);
+  }
+
+  @Put('user/changePassword')
+  public async changePassword(@Body() data: IChangePassword) {
+    return this.userService.changePassword(data.email, data.password);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -4,6 +4,7 @@ import {
   HttpStatus,
   NotFoundException,
   ParseUUIDPipe,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
@@ -12,6 +13,7 @@ import { UserDto } from './user.dto';
 import { v4 as uuidv4 } from 'uuid';
 
 import * as bcrypt from 'bcrypt';
+import { exception } from 'console';
 
 const userProjection = {
   __v: false,
@@ -53,7 +55,7 @@ export class UserService {
   }
 
   async getUserByEmail(email: string): Promise<UserDto> {
-    const user = await this.userModel.findOne({ email }, userProjection).exec();
+    const user = await this.userModel.findOne({ email }).exec();
 
     if (!user) throw new NotFoundException('User not found');
 
@@ -77,5 +79,24 @@ export class UserService {
     if (!user) throw new HttpException('Not found', HttpStatus.NOT_FOUND);
 
     return user;
+  }
+
+  async changePassword(email: string, newPassword): Promise<string> {
+    const hashPassword = await bcrypt.hash(newPassword, 10);
+    try {
+      const user = await this.userModel
+        .findOneAndUpdate(
+          { email },
+          { password: hashPassword },
+          { projection: userProjection },
+        )
+        .exec();
+      if (!user)
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+
+      return 'password_changed';
+    } catch (error) {
+      throw new InternalServerErrorException('Internal Error');
+    }
   }
 }
