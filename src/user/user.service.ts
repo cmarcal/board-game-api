@@ -5,6 +5,7 @@ import {
   NotFoundException,
   ParseUUIDPipe,
   InternalServerErrorException,
+  ConflictException,
 } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
@@ -35,6 +36,9 @@ export class UserService {
     const uuid = uuidv4();
     const hashPassword = await bcrypt.hash(newUser.password, 10);
     const { email, name } = newUser;
+
+    const emailAlreadyExists = await this.userModel.findOne({ email }).exec();
+    if (emailAlreadyExists) throw new ConflictException();
 
     const user = new this.userModel({
       name,
